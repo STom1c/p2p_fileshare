@@ -1,23 +1,23 @@
 /* ============================================================
    P2P Share - Custom Styles
-   Dark glassmorphism design
+   Dark earthy brown-green glassmorphism design
    ============================================================ */
 
 :root {
-    --primary: #6c63ff;
-    --primary-dark: #5a52e0;
-    --accent: #00d4ff;
-    --success: #00e676;
-    --warning: #ffab40;
-    --danger: #ff5252;
-    --bg: #0d0d1a;
-    --bg2: #12122a;
-    --card-bg: rgba(255, 255, 255, 0.05);
-    --card-border: rgba(255, 255, 255, 0.1);
-    --text: #f0f0ff;
-    --text-muted: rgba(255, 255, 255, 0.5);
+    --primary: #2a5500;        /* deep forest green — buttons & icons */
+    --primary-dark: #1a3a00;
+    --accent: #5a7a00;         /* olive green */
+    --success: #1e6e00;
+    --warning: #7a5500;
+    --danger: #b52200;
+    --bg: #D2CB35;             /* warm citron yellow */
+    --bg2: #bcb820;
+    --card-bg: rgba(255, 255, 255, 0.45);
+    --card-border: rgba(0, 70, 0, 0.18);
+    --text: #1a2c00;           /* near-black dark green */
+    --text-muted: rgba(30, 60, 0, 0.58);
     --radius: 16px;
-    --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    --shadow: 0 8px 32px rgba(0, 50, 0, 0.18);
 }
 
 /* ── Base ── */
@@ -30,8 +30,8 @@ body {
     color: var(--text);
     min-height: 100vh;
     background-image:
-        radial-gradient(ellipse at 20% 20%, rgba(108, 99, 255, 0.15) 0%, transparent 50%),
-        radial-gradient(ellipse at 80% 80%, rgba(0, 212, 255, 0.1) 0%, transparent 50%);
+        radial-gradient(ellipse at 10% 10%, rgba(255, 255, 180, 0.4) 0%, transparent 45%),
+        radial-gradient(ellipse at 90% 90%, rgba(100, 160, 0, 0.15) 0%, transparent 45%);
 }
 
 a { color: var(--accent); text-decoration: none; }
@@ -39,9 +39,9 @@ a:hover { opacity: 0.8; }
 
 /* ── Navbar ── */
 .navbar {
-    background: rgba(13, 13, 26, 0.8);
+    background: rgba(185, 195, 20, 0.82);
     backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--card-border);
+    border-bottom: 1px solid rgba(0, 70, 0, 0.2);
     padding: 0.75rem 0;
     position: sticky;
     top: 0;
@@ -71,10 +71,10 @@ a:hover { opacity: 0.8; }
 .badge-feature {
     font-size: 0.7rem;
     color: var(--text-muted);
-    border: 1px solid var(--card-border);
+    border: 1px solid rgba(0, 70, 0, 0.25);
     padding: 4px 10px;
     border-radius: 20px;
-    background: var(--card-bg);
+    background: rgba(255, 255, 255, 0.35);
 }
 
 /* ── Main container ── */
@@ -96,30 +96,31 @@ main.container {
 
 /* ── Drop Zone ── */
 .drop-zone {
-    border: 2px dashed rgba(255, 255, 255, 0.2);
+    border: 2px dashed rgba(0, 70, 0, 0.35);
     border-radius: 12px;
     padding: 3rem 2rem;
     text-align: center;
     cursor: pointer;
     transition: all 0.3s ease;
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(255, 255, 255, 0.25);
     position: relative;
 }
 
 .drop-zone:hover {
     border-color: var(--primary);
-    background: rgba(108, 99, 255, 0.05);
+    background: rgba(255, 255, 255, 0.4);
 }
 
 .drop-zone.dragover {
-    border-color: var(--accent);
-    background: rgba(0, 212, 255, 0.08);
+    border-color: var(--primary);
+    background: rgba(255, 255, 255, 0.5);
     transform: scale(1.01);
 }
 
 .drop-zone-icon {
     font-size: 3.5rem;
     background: linear-gradient(135deg, var(--primary), var(--accent));
+    /* brown-green gradient inherited via --primary / --accent */
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -143,14 +144,14 @@ main.container {
     align-items: center;
     justify-content: space-between;
     padding: 0.6rem 1rem;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid var(--card-border);
+    background: rgba(255, 255, 255, 0.35);
+    border: 1px solid rgba(0, 70, 0, 0.15);
     border-radius: 8px;
     margin-bottom: 0.5rem;
     transition: background 0.2s;
 }
 
-.file-item:hover { background: rgba(255, 255, 255, 0.07); }
+.file-item:hover { background: rgba(255, 255, 255, 0.55); }
 
 .file-name {
     font-size: 0.9rem;
@@ -172,7 +173,7 @@ main.container {
     align-items: center;
     justify-content: center;
     gap: 0.4rem;
-    background: linear-gradient(135deg, var(--primary), #8b5cf6);
+    background: linear-gradient(135deg, var(--primary), var(--accent));
     color: white;
     border: none;
     border-radius: 10px;
@@ -187,7 +188,7 @@ main.container {
 .btn-primary-custom:hover {
     opacity: 0.9;
     transform: translateY(-1px);
-    box-shadow: 0 4px 20px rgba(108, 99, 255, 0.4);
+    box-shadow: 0 4px 24px rgba(0, 80, 0, 0.35);
 }
 
 .btn-primary-custom:active { transform: translateY(0); }
@@ -197,9 +198,9 @@ main.container {
     align-items: center;
     justify-content: center;
     gap: 0.4rem;
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.45);
     color: var(--text);
-    border: 1px solid var(--card-border);
+    border: 1px solid rgba(0, 70, 0, 0.2);
     border-radius: 10px;
     padding: 0.7rem 1.2rem;
     font-size: 0.9rem;
@@ -208,14 +209,14 @@ main.container {
 }
 
 .btn-secondary-custom:hover {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.65);
+    border-color: rgba(0, 70, 0, 0.35);
 }
 
 /* ── Alerts ── */
 .alert-success-custom {
-    background: rgba(0, 230, 118, 0.1);
-    border: 1px solid rgba(0, 230, 118, 0.3);
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(0, 110, 0, 0.35);
     border-radius: 10px;
     padding: 0.75rem 1rem;
     color: var(--success);
@@ -223,8 +224,8 @@ main.container {
 }
 
 .alert-warning-custom {
-    background: rgba(255, 171, 64, 0.1);
-    border: 1px solid rgba(255, 171, 64, 0.3);
+    background: rgba(255, 240, 180, 0.55);
+    border: 1px solid rgba(120, 80, 0, 0.35);
     border-radius: 10px;
     padding: 0.75rem 1rem;
     color: var(--warning);
@@ -232,8 +233,8 @@ main.container {
 }
 
 .alert-info-custom {
-    background: rgba(0, 212, 255, 0.08);
-    border: 1px solid rgba(0, 212, 255, 0.25);
+    background: rgba(255, 255, 255, 0.45);
+    border: 1px solid rgba(0, 80, 0, 0.25);
     border-radius: 10px;
     padding: 0.75rem 1rem;
     color: var(--accent);
@@ -251,7 +252,7 @@ main.container {
 
 .input-url {
     flex: 1;
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.6);
     border: none;
     color: var(--text);
     padding: 0.7rem 1rem;
@@ -262,7 +263,7 @@ main.container {
 }
 
 .btn-copy {
-    background: linear-gradient(135deg, var(--primary), #8b5cf6);
+    background: linear-gradient(135deg, var(--primary), var(--accent));
     color: white;
     border: none;
     padding: 0.7rem 1.2rem;
@@ -295,8 +296,8 @@ main.container {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid var(--card-border);
+    background: rgba(255, 255, 255, 0.35);
+    border: 1px solid rgba(0, 70, 0, 0.15);
     border-radius: 10px;
     padding: 0.75rem 1rem;
 }
@@ -317,7 +318,7 @@ main.container {
 
 /* ── Progress bar ── */
 .progress-wrap {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(0, 60, 0, 0.15);
     border-radius: 100px;
     height: 10px;
     overflow: hidden;
@@ -327,6 +328,7 @@ main.container {
 .progress-bar-custom {
     height: 100%;
     background: linear-gradient(90deg, var(--primary), var(--accent));
+    /* olive green → amber-brown */
     border-radius: 100px;
     transition: width 0.5s ease;
     min-width: 4px;
@@ -349,20 +351,23 @@ main.container {
 
 /* ── Feature cards (how it works) ── */
 .feature-card {
-    background: var(--card-bg);
-    border: 1px solid var(--card-border);
+    background: rgba(255, 255, 255, 0.4);
+    border: 1px solid rgba(0, 70, 0, 0.18);
     border-radius: var(--radius);
     padding: 1.25rem;
     text-align: center;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, background 0.2s;
 }
 
-.feature-card:hover { border-color: rgba(108, 99, 255, 0.4); }
+.feature-card:hover {
+    border-color: rgba(0, 80, 0, 0.45);
+    background: rgba(255, 255, 255, 0.6);
+}
 
 .feature-icon {
     width: 40px;
     height: 40px;
-    background: linear-gradient(135deg, var(--primary), #8b5cf6);
+    background: linear-gradient(135deg, var(--primary), var(--accent));
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -382,8 +387,8 @@ main.container {
     align-items: center;
     justify-content: space-between;
     padding: 0.8rem 1rem;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid var(--card-border);
+    background: rgba(255, 255, 255, 0.35);
+    border: 1px solid rgba(0, 70, 0, 0.15);
     border-radius: 8px;
     margin-bottom: 0.5rem;
     gap: 1rem;
@@ -474,7 +479,7 @@ footer {
     padding: 2rem;
     color: var(--text-muted);
     font-size: 0.8rem;
-    border-top: 1px solid var(--card-border);
+    border-top: 1px solid rgba(0, 70, 0, 0.2);
     margin-top: 2rem;
 }
 
@@ -530,6 +535,7 @@ footer {
     font-size: 6rem;
     font-weight: 900;
     background: linear-gradient(135deg, var(--primary), var(--accent));
+    /* olive → amber */
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;

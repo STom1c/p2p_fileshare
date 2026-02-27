@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>P2P 檔案分享 · 免費 · 安全 · 無限制</title>
+    <title>P2P Share by Stanley Tseng / 史單力</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔗</text></svg>">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
@@ -15,6 +15,7 @@
     <div class="container">
         <a href="/" class="navbar-brand">
             <i class="fas fa-share-nodes"></i> P2P Share
+            <span style="font-size:0.65rem; font-weight:400; opacity:0.6; margin-left:4px;">by Stanley Tseng / 史單力</span>
         </a>
         <span class="badge-feature">免費 &nbsp;·&nbsp; 無需註冊 &nbsp;·&nbsp; 無檔案大小限制</span>
     </div>
@@ -42,7 +43,7 @@
             <div class="drop-zone" id="dropZone">
                 <input type="file" id="fileInput" multiple hidden>
                 <div class="drop-zone-icon"><i class="fas fa-cloud-arrow-up"></i></div>
-                <h4>拖拽檔案到這裡</h4>
+                <h4>拖放檔案到這裡</h4>
                 <p>或點擊選擇檔案</p>
                 <p class="small mt-2" style="color:rgba(255,255,255,0.3);">
                     支援任意大小、任意格式 · 可同時選多個檔案
@@ -151,7 +152,7 @@
                 <div class="feature-card">
                     <div class="feature-icon">1</div>
                     <h6>選擇檔案</h6>
-                    <p class="text-secondary small">拖拽或點擊選擇任意大小的檔案，支援同時分享多個檔案。</p>
+                    <p class="text-secondary small">拖放或點擊選擇任意大小的檔案，支援同時分享多個檔案。</p>
                 </div>
             </div>
             <div class="col-md-4">
@@ -176,7 +177,7 @@
 <footer>
     P2P Share &nbsp;·&nbsp;
     由 <a href="https://webtorrent.io" target="_blank">WebTorrent</a> 技術驅動 &nbsp;·&nbsp;
-    Stanley Tseng 個人版本
+    Stanley Tseng / 史單力 個人版本
 </footer>
 
 <!-- ── Scripts ── -->
