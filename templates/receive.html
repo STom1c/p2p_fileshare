@@ -175,16 +175,22 @@
 </footer>
 
 <!-- ── Scripts ── -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/webtorrent/1.9.6/webtorrent.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>
 <script>
 // ============================================================
-// P2P Share — Receiver Logic
+// P2P Share — Receiver Logic (WebTorrent)
 // ============================================================
 
 const MAGNET_URI = {{ magnet | tojson }};
 const FILENAME   = {{ filename | tojson }};
 const FILESIZE   = {{ filesize }};
 const FILE_COUNT = {{ file_count }};
+
+const TRACKERS = [
+    'wss://tracker.btorrent.xyz',
+    'wss://tracker.openwebtorrent.com',
+    'wss://tracker.webtorrent.dev',
+];
 
 // ── Utilities ──────────────────────────────────────────────
 function formatSize(bytes) {
@@ -218,7 +224,7 @@ function setStatus(text, cls) {
 
 showPhase('connecting');
 
-// ── Start WebTorrent download ──────────────────────────────
+// ── WebTorrent download ────────────────────────────────────
 const client = new WebTorrent();
 
 client.on('error', err => {
@@ -230,42 +236,36 @@ client.on('error', err => {
 
 let downloadStarted = false;
 
-client.add(MAGNET_URI, torrent => {
-    console.log('Torrent added:', torrent.name);
+// 60s timeout hint
+const connectTimeout = setTimeout(() => {
+    if (!downloadStarted) {
+        document.getElementById('connectingHint').innerHTML =
+            '⚠️ 仍在尋找傳送方...<br>請確認：① 傳送方頁面保持開啟 ② 雙方都有網路連線<br>' +
+            '<button onclick="location.reload()" style="margin-top:8px;padding:4px 14px;cursor:pointer;">重新連線</button>';
+    }
+}, 60000);
+
+client.add(MAGNET_URI, { announce: TRACKERS }, torrent => {
+    clearTimeout(connectTimeout);
     document.getElementById('connectingHint').textContent = '已找到傳送方，準備下載...';
 
-    // Show file list in connecting phase briefly
-    torrent.on('download', bytes => {
+    torrent.on('download', () => {
         if (!downloadStarted) {
             downloadStarted = true;
             showPhase('downloading');
             setStatus('下載中', 'downloading');
         }
-
-        const pct = (torrent.progress * 100).toFixed(1);
-        document.getElementById('progressPct').textContent  = pct + '%';
-        document.getElementById('progressBar2').style.width = pct + '%';
-        document.getElementById('dlSpeed').textContent      = formatSpeed(torrent.downloadSpeed);
-        document.getElementById('dlReceived').textContent   = formatSize(torrent.downloaded);
-        document.getElementById('dlPeers').textContent      = torrent.numPeers;
-        document.getElementById('etaText').textContent      = formatETA(torrent.timeRemaining);
+        updateStats(torrent);
     });
 
     torrent.on('done', () => {
-        console.log('Torrent download complete');
         setStatus('完成', 'done');
         showPhase('done');
-
-        // Build download buttons for each file
         const container = document.getElementById('downloadButtons');
         container.innerHTML = '';
-
         torrent.files.forEach(file => {
             file.getBlobURL((err, url) => {
-                if (err) {
-                    console.error('getBlobURL error:', err);
-                    return;
-                }
+                if (err) return;
                 const item = document.createElement('div');
                 item.className = 'dl-file-item';
                 item.innerHTML = `
@@ -281,32 +281,29 @@ client.add(MAGNET_URI, torrent => {
         });
     });
 
-    // Peer connected hint
-    torrent.on('wire', wire => {
-        if (!downloadStarted) {
-            document.getElementById('connectingHint').textContent = `已連接 ${torrent.numPeers} 個裝置，開始傳輸...`;
-        }
+    torrent.on('wire', () => {
+        if (!downloadStarted)
+            document.getElementById('connectingHint').textContent =
+                `已連接 ${torrent.numPeers} 個裝置，開始傳輸...`;
     });
 
-    // Periodic stats update even before first download event
-    const statsTimer = setInterval(() => {
-        if (torrent.progress >= 1) {
-            clearInterval(statsTimer);
-            return;
-        }
-        if (downloadStarted) {
-            const pct = (torrent.progress * 100).toFixed(1);
-            document.getElementById('progressPct').textContent  = pct + '%';
-            document.getElementById('progressBar2').style.width = pct + '%';
-            document.getElementById('dlSpeed').textContent      = formatSpeed(torrent.downloadSpeed);
-            document.getElementById('dlReceived').textContent   = formatSize(torrent.downloaded);
-            document.getElementById('dlPeers').textContent      = torrent.numPeers;
-            document.getElementById('etaText').textContent      = formatETA(torrent.timeRemaining);
-        } else if (torrent.numPeers > 0) {
-            document.getElementById('connectingHint').textContent = `已連接 ${torrent.numPeers} 個裝置，等待傳輸...`;
-        }
+    setInterval(() => {
+        if (downloadStarted) updateStats(torrent);
+        else if (torrent.numPeers > 0)
+            document.getElementById('connectingHint').textContent =
+                `已連接 ${torrent.numPeers} 個裝置，等待傳輸...`;
     }, 1000);
 });
+
+function updateStats(torrent) {
+    const pct = (torrent.progress * 100).toFixed(1);
+    document.getElementById('progressPct').textContent  = pct + '%';
+    document.getElementById('progressBar2').style.width = pct + '%';
+    document.getElementById('dlSpeed').textContent      = formatSpeed(torrent.downloadSpeed);
+    document.getElementById('dlReceived').textContent   = formatSize(torrent.downloaded);
+    document.getElementById('dlPeers').textContent      = torrent.numPeers;
+    document.getElementById('etaText').textContent      = formatETA(torrent.timeRemaining);
+}
 
 function escapeHtml(text) {
     const d = document.createElement('div');

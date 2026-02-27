@@ -20,7 +20,7 @@ def init_db():
     conn.execute('''
         CREATE TABLE IF NOT EXISTS short_urls (
             code TEXT PRIMARY KEY,
-            magnet TEXT NOT NULL,
+            magnet TEXT DEFAULT '',
             filename TEXT DEFAULT '',
             filesize INTEGER DEFAULT 0,
             file_count INTEGER DEFAULT 1,
@@ -47,20 +47,16 @@ def shorten():
     if not data:
         return jsonify({'error': 'Invalid request'}), 400
 
-    magnet = data.get('magnet', '').strip()
-    filename = data.get('filename', 'Unknown')
-    filesize = data.get('filesize', 0)
+    magnet     = data.get('magnet', '')
+    filename   = data.get('filename', 'Unknown')
+    filesize   = data.get('filesize', 0)
     file_count = data.get('file_count', 1)
-
-    if not magnet:
-        return jsonify({'error': 'No magnet link provided'}), 400
 
     conn = get_db()
     try:
         code = generate_code()
         while conn.execute('SELECT 1 FROM short_urls WHERE code = ?', (code,)).fetchone():
             code = generate_code()
-
         conn.execute(
             'INSERT INTO short_urls (code, magnet, filename, filesize, file_count) VALUES (?, ?, ?, ?, ?)',
             (code, magnet, filename, filesize, file_count)
@@ -69,7 +65,7 @@ def shorten():
     finally:
         conn.close()
 
-    base_url = request.host_url.rstrip('/')
+    base_url  = request.host_url.rstrip('/')
     short_url = f"{base_url}/s/{code}"
     return jsonify({'short_url': short_url, 'code': code})
 

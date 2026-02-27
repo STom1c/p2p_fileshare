@@ -10,8 +10,8 @@
     --success: #1e6e00;
     --warning: #7a5500;
     --danger: #b52200;
-    --bg: #D2CB35;             /* warm citron yellow */
-    --bg2: #bcb820;
+    --bg: #B8D4A8;             /* soft sage green */
+    --bg2: #a3c491;
     --card-bg: rgba(255, 255, 255, 0.45);
     --card-border: rgba(0, 70, 0, 0.18);
     --text: #1a2c00;           /* near-black dark green */
@@ -30,8 +30,8 @@ body {
     color: var(--text);
     min-height: 100vh;
     background-image:
-        radial-gradient(ellipse at 10% 10%, rgba(255, 255, 180, 0.4) 0%, transparent 45%),
-        radial-gradient(ellipse at 90% 90%, rgba(100, 160, 0, 0.15) 0%, transparent 45%);
+        radial-gradient(ellipse at 10% 10%, rgba(255, 255, 240, 0.35) 0%, transparent 45%),
+        radial-gradient(ellipse at 90% 90%, rgba(80, 140, 70, 0.2) 0%, transparent 45%);
 }
 
 a { color: var(--accent); text-decoration: none; }
@@ -39,7 +39,7 @@ a:hover { opacity: 0.8; }
 
 /* ── Navbar ── */
 .navbar {
-    background: rgba(185, 195, 20, 0.82);
+    background: rgba(155, 195, 135, 0.85);
     backdrop-filter: blur(12px);
     border-bottom: 1px solid rgba(0, 70, 0, 0.2);
     padding: 0.75rem 0;
