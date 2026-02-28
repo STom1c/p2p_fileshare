@@ -195,8 +195,12 @@
         // P2P Share — Sender Logic (WebTorrent)
         // ============================================================
 
+        // Use local tracker when running on localhost, production tracker on Render
+        const SELF_TRACKER = location.hostname === 'localhost' || location.hostname === '127.0.0.1'
+            ? 'ws://localhost:8000'
+            : 'wss://p2p-share-tracker.onrender.com';
         const TRACKERS = [
-            'wss://p2p-share-tracker.onrender.com',  // self-hosted (guaranteed WebRTC signaling)
+            SELF_TRACKER,                            // self-hosted (guaranteed WebRTC signaling)
             'wss://tracker.openwebtorrent.com',
             'wss://tracker.webtorrent.dev',
             'wss://tracker.files.fm:7073/announce',
