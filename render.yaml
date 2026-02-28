@@ -3,7 +3,7 @@ services:
     name: p2p-share
     runtime: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn --worker-class gthread --threads 8 -w 1 wsgi:app
+    startCommand: gunicorn --worker-class gthread --threads 4 -w 1 wsgi:app
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
