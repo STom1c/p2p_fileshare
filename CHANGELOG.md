@@ -4,6 +4,17 @@
 
 ---
 
+## [0.2.1] - 2026-02-28
+
+### Fixed
+- 修正 Tracker 連線問題：新增確認可用的 WSS tracker（`tracker.files.fm:7073`），原有 tracker 保留為備用
+- 移除已停用的 `tracker.btorrent.xyz` 優先順序（降為最末）
+
+### Added
+- 新增 Tracker 連線診斷：頁面載入時自動檢測各 tracker 可達性，結果輸出至 Console
+
+---
+
 ## [0.2.0] - 2026-02-27
 
 ### Changed

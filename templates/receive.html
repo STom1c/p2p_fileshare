@@ -1,274 +1,317 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>接收檔案 · P2P Share by Stanley Tseng / 史單力</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📥</text></svg>">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📥</text></svg>">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
 </head>
+
 <body>
 
-<!-- ── Navbar ── -->
-<nav class="navbar">
-    <div class="container">
-        <a href="/" class="navbar-brand">
-            <i class="fas fa-share-nodes"></i> P2P Share
-            <span style="font-size:0.65rem; font-weight:400; opacity:0.6; margin-left:4px;">by Stanley Tseng / 史單力</span>
-        </a>
-        <a href="/" class="btn-secondary-custom" style="padding:6px 14px; font-size:0.8rem;">
-            <i class="fas fa-upload me-1"></i>分享我的檔案
-        </a>
-    </div>
-</nav>
-
-<!-- ── Main ── -->
-<main class="container py-5">
-    <div style="max-width:600px; margin:0 auto;">
-
-        <!-- Title -->
-        <div class="text-center mb-4">
-            <h2 class="fw-bold" style="margin-bottom:0.5rem;">接收檔案</h2>
-            <p class="text-secondary small">透過 WebTorrent P2P 直接接收，不需上傳至伺服器</p>
+    <!-- ── Navbar ── -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="/" class="navbar-brand">
+                <i class="fas fa-share-nodes"></i> P2P Share
+                <span style="font-size:0.65rem; font-weight:400; opacity:0.6; margin-left:4px;">by Stanley Tseng /
+                    史單力</span>
+            </a>
+            <a href="/" class="btn-secondary-custom" style="padding:6px 14px; font-size:0.8rem;">
+                <i class="fas fa-upload me-1"></i>分享我的檔案
+            </a>
         </div>
+    </nav>
 
-        <!-- ── Receive Card ── -->
-        <div class="card-glass">
+    <!-- ── Main ── -->
+    <main class="container py-5">
+        <div style="max-width:600px; margin:0 auto;">
 
-            <!-- File info header -->
-            <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem; padding-bottom:1.5rem; border-bottom:1px solid var(--card-border);">
-                <div style="
+            <!-- Title -->
+            <div class="text-center mb-4">
+                <h2 class="fw-bold" style="margin-bottom:0.5rem;">接收檔案</h2>
+                <p class="text-secondary small">透過 WebTorrent P2P 直接接收，不需上傳至伺服器</p>
+            </div>
+
+            <!-- ── Receive Card ── -->
+            <div class="card-glass">
+
+                <!-- File info header -->
+                <div
+                    style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem; padding-bottom:1.5rem; border-bottom:1px solid var(--card-border);">
+                    <div style="
                     width:54px; height:54px;
                     background:linear-gradient(135deg,var(--primary),#8b5cf6);
                     border-radius:14px;
                     display:flex; align-items:center; justify-content:center;
                     font-size:1.6rem; flex-shrink:0;">
-                    {% if file_count > 1 %}
-                    <i class="fas fa-folder-open" style="color:white;"></i>
-                    {% else %}
-                    <i class="fas fa-file" style="color:white;"></i>
-                    {% endif %}
-                </div>
-                <div style="flex:1; min-width:0;">
-                    <div style="font-weight:600; font-size:1rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                        {{ filename or '未知檔案' }}
+                        {% if file_count > 1 %}
+                        <i class="fas fa-folder-open" style="color:white;"></i>
+                        {% else %}
+                        <i class="fas fa-file" style="color:white;"></i>
+                        {% endif %}
                     </div>
-                    <div class="text-secondary small" style="margin-top:2px;">
-                        {% if filesize %}{{ filesize | filesizeformat }}{% else %}大小未知{% endif %}
-                        {% if file_count > 1 %} · {{ file_count }} 個檔案{% endif %}
-                    </div>
-                </div>
-                <span id="statusBadge" class="status-badge connecting">
-                    <span class="status-dot"></span>
-                    連線中
-                </span>
-            </div>
-
-            <!-- PHASE 1: Connecting -->
-            <div id="phase-connecting">
-                <div class="alert-info-custom mb-4">
-                    <i class="fas fa-circle-notch fa-spin me-2"></i>
-                    正在尋找傳送方裝置，請確保傳送方頁面保持開啟...
-                </div>
-                <div class="progress-wrap">
-                    <div class="progress-bar-custom" style="width:0%" id="progressBar"></div>
-                </div>
-                <div class="text-center mt-3">
-                    <span class="text-secondary small" id="connectingHint">等待連線...</span>
-                </div>
-            </div>
-
-            <!-- PHASE 2: Downloading -->
-            <div id="phase-downloading" class="d-none">
-                <div style="margin-bottom:0.5rem; display:flex; justify-content:space-between; align-items:center;">
-                    <span class="text-secondary small">下載進度</span>
-                    <span id="progressPct" style="font-weight:700; font-size:1rem;">0%</span>
-                </div>
-                <div class="progress-wrap mb-3">
-                    <div class="progress-bar-custom" id="progressBar2" style="width:0%;"></div>
-                </div>
-
-                <!-- Download stats -->
-                <div class="stats-grid mb-4" style="grid-template-columns:repeat(3,1fr);">
-                    <div class="stat-item">
-                        <i class="fas fa-download" style="color:var(--accent);"></i>
-                        <div>
-                            <div class="stat-value" id="dlSpeed">0 B/s</div>
-                            <div class="stat-label">下載速度</div>
+                    <div style="flex:1; min-width:0;">
+                        <div
+                            style="font-weight:600; font-size:1rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                            {{ filename or '未知檔案' }}
+                        </div>
+                        <div class="text-secondary small" style="margin-top:2px;">
+                            {% if filesize %}{{ filesize | filesizeformat }}{% else %}大小未知{% endif %}
+                            {% if file_count > 1 %} · {{ file_count }} 個檔案{% endif %}
                         </div>
                     </div>
-                    <div class="stat-item">
-                        <i class="fas fa-database" style="color:var(--primary);"></i>
-                        <div>
-                            <div class="stat-value" id="dlReceived">0 B</div>
-                            <div class="stat-label">已接收</div>
+                    <span id="statusBadge" class="status-badge connecting">
+                        <span class="status-dot"></span>
+                        連線中
+                    </span>
+                </div>
+
+                <!-- PHASE 1: Connecting -->
+                <div id="phase-connecting">
+                    <div class="alert-info-custom mb-4">
+                        <i class="fas fa-circle-notch fa-spin me-2"></i>
+                        正在尋找傳送方裝置，請確保傳送方頁面保持開啟...
+                    </div>
+                    <div class="progress-wrap">
+                        <div class="progress-bar-custom" style="width:0%" id="progressBar"></div>
+                    </div>
+                    <div class="text-center mt-3">
+                        <span class="text-secondary small" id="connectingHint">等待連線...</span>
+                    </div>
+                </div>
+
+                <!-- PHASE 2: Downloading -->
+                <div id="phase-downloading" class="d-none">
+                    <div style="margin-bottom:0.5rem; display:flex; justify-content:space-between; align-items:center;">
+                        <span class="text-secondary small">下載進度</span>
+                        <span id="progressPct" style="font-weight:700; font-size:1rem;">0%</span>
+                    </div>
+                    <div class="progress-wrap mb-3">
+                        <div class="progress-bar-custom" id="progressBar2" style="width:0%;"></div>
+                    </div>
+
+                    <!-- Download stats -->
+                    <div class="stats-grid mb-4" style="grid-template-columns:repeat(3,1fr);">
+                        <div class="stat-item">
+                            <i class="fas fa-download" style="color:var(--accent);"></i>
+                            <div>
+                                <div class="stat-value" id="dlSpeed">0 B/s</div>
+                                <div class="stat-label">下載速度</div>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-database" style="color:var(--primary);"></i>
+                            <div>
+                                <div class="stat-value" id="dlReceived">0 B</div>
+                                <div class="stat-label">已接收</div>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-users" style="color:var(--success);"></i>
+                            <div>
+                                <div class="stat-value" id="dlPeers">0</div>
+                                <div class="stat-label">連線裝置</div>
+                            </div>
                         </div>
                     </div>
-                    <div class="stat-item">
-                        <i class="fas fa-users" style="color:var(--success);"></i>
-                        <div>
-                            <div class="stat-value" id="dlPeers">0</div>
-                            <div class="stat-label">連線裝置</div>
-                        </div>
+
+                    <div class="text-center text-secondary small" id="etaText"></div>
+                </div>
+
+                <!-- PHASE 3: Done -->
+                <div id="phase-done" class="d-none">
+                    <div class="alert-success-custom mb-4" style="text-align:center; padding:1.2rem;">
+                        <i class="fas fa-check-circle" style="font-size:2rem; display:block; margin-bottom:0.5rem;"></i>
+                        <strong>下載完成！</strong>
+                    </div>
+
+                    <!-- File download buttons -->
+                    <div id="downloadButtons"></div>
+
+                    <div class="text-center mt-4">
+                        <a href="/" class="btn-secondary-custom" style="text-decoration:none;">
+                            <i class="fas fa-share-alt me-1"></i>分享我的檔案
+                        </a>
                     </div>
                 </div>
 
-                <div class="text-center text-secondary small" id="etaText"></div>
-            </div>
-
-            <!-- PHASE 3: Done -->
-            <div id="phase-done" class="d-none">
-                <div class="alert-success-custom mb-4" style="text-align:center; padding:1.2rem;">
-                    <i class="fas fa-check-circle" style="font-size:2rem; display:block; margin-bottom:0.5rem;"></i>
-                    <strong>下載完成！</strong>
-                </div>
-
-                <!-- File download buttons -->
-                <div id="downloadButtons"></div>
-
-                <div class="text-center mt-4">
-                    <a href="/" class="btn-secondary-custom" style="text-decoration:none;">
-                        <i class="fas fa-share-alt me-1"></i>分享我的檔案
-                    </a>
-                </div>
-            </div>
-
-            <!-- PHASE error -->
-            <div id="phase-error" class="d-none">
-                <div style="
+                <!-- PHASE error -->
+                <div id="phase-error" class="d-none">
+                    <div style="
                     background:rgba(255,82,82,0.1);
                     border:1px solid rgba(255,82,82,0.3);
                     border-radius:10px;
                     padding:1rem;
                     color:var(--danger);
                     text-align:center;">
-                    <i class="fas fa-exclamation-circle" style="font-size:2rem; display:block; margin-bottom:0.5rem;"></i>
-                    <strong id="errorMsg">連線失敗</strong>
-                    <p class="small" style="margin:0.5rem 0 0; color:rgba(255,255,255,0.5);">
-                        請確認傳送方頁面仍然開啟，然後重新整理此頁面。
-                    </p>
+                        <i class="fas fa-exclamation-circle"
+                            style="font-size:2rem; display:block; margin-bottom:0.5rem;"></i>
+                        <strong id="errorMsg">連線失敗</strong>
+                        <p class="small" style="margin:0.5rem 0 0; color:rgba(255,255,255,0.5);">
+                            請確認傳送方頁面仍然開啟，然後重新整理此頁面。
+                        </p>
+                    </div>
+                    <div class="text-center mt-3">
+                        <button onclick="location.reload()" class="btn-secondary-custom">
+                            <i class="fas fa-rotate-right me-1"></i>重試
+                        </button>
+                    </div>
                 </div>
-                <div class="text-center mt-3">
-                    <button onclick="location.reload()" class="btn-secondary-custom">
-                        <i class="fas fa-rotate-right me-1"></i>重試
-                    </button>
-                </div>
+
+            </div><!-- /card-glass -->
+
+            <!-- How to send -->
+            <div class="alert-info-custom mt-4 small">
+                <i class="fas fa-lightbulb me-2"></i>
+                想分享您的檔案？<a href="/" style="color:var(--accent); font-weight:600;">點此開始分享</a>，
+                完全免費，無需帳號。
             </div>
 
-        </div><!-- /card-glass -->
-
-        <!-- How to send -->
-        <div class="alert-info-custom mt-4 small">
-            <i class="fas fa-lightbulb me-2"></i>
-            想分享您的檔案？<a href="/" style="color:var(--accent); font-weight:600;">點此開始分享</a>，
-            完全免費，無需帳號。
         </div>
+    </main>
 
-    </div>
-</main>
+    <footer>
+        P2P Share &nbsp;·&nbsp;
+        由 <a href="https://webtorrent.io" target="_blank">WebTorrent</a> 技術驅動 &nbsp;·&nbsp;
+        Stanley Tseng / 史單力 個人版本
+    </footer>
 
-<footer>
-    P2P Share &nbsp;·&nbsp;
-    由 <a href="https://webtorrent.io" target="_blank">WebTorrent</a> 技術驅動 &nbsp;·&nbsp;
-    Stanley Tseng / 史單力 個人版本
-</footer>
+    <!-- ── Scripts ── -->
+    <script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>
+    <script>
+        // ============================================================
+        // P2P Share — Receiver Logic (WebTorrent)
+        // ============================================================
 
-<!-- ── Scripts ── -->
-<script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>
-<script>
-// ============================================================
-// P2P Share — Receiver Logic (WebTorrent)
-// ============================================================
+        const MAGNET_URI = {{ magnet | tojson }};
+        const FILENAME = {{ filename | tojson }};
+        const FILESIZE = {{ filesize }};
+        const FILE_COUNT = {{ file_count }};
 
-const MAGNET_URI = {{ magnet | tojson }};
-const FILENAME   = {{ filename | tojson }};
-const FILESIZE   = {{ filesize }};
-const FILE_COUNT = {{ file_count }};
+        const TRACKERS = [
+            'wss://tracker.files.fm:7073/announce',
+            'wss://tracker.openwebtorrent.com',
+            'wss://tracker.webtorrent.dev',
+            'wss://tracker.btorrent.xyz',
+        ];
 
-const TRACKERS = [
-    'wss://tracker.btorrent.xyz',
-    'wss://tracker.openwebtorrent.com',
-    'wss://tracker.webtorrent.dev',
-];
-
-// ── Utilities ──────────────────────────────────────────────
-function formatSize(bytes) {
-    if (!bytes || bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
-function formatSpeed(bps) { return formatSize(bps) + '/s'; }
-function formatETA(ms) {
-    if (!ms || ms === Infinity) return '';
-    const s = Math.round(ms / 1000);
-    if (s < 60)  return `預估剩餘 ${s} 秒`;
-    if (s < 3600) return `預估剩餘 ${Math.round(s/60)} 分鐘`;
-    return `預估剩餘 ${Math.round(s/3600)} 小時`;
-}
-
-// ── Phase management ───────────────────────────────────────
-function showPhase(phase) {
-    ['connecting', 'downloading', 'done', 'error'].forEach(p => {
-        const el = document.getElementById('phase-' + p);
-        if (el) el.style.display = (p === phase) ? '' : 'none';
-    });
-}
-function setStatus(text, cls) {
-    const badge = document.getElementById('statusBadge');
-    badge.className = 'status-badge ' + cls;
-    badge.innerHTML = `<span class="status-dot"></span>${text}`;
-}
-
-showPhase('connecting');
-
-// ── WebTorrent download ────────────────────────────────────
-const client = new WebTorrent();
-
-client.on('error', err => {
-    console.error('WebTorrent error:', err);
-    document.getElementById('errorMsg').textContent = '錯誤：' + err.message;
-    showPhase('error');
-    setStatus('錯誤', '');
-});
-
-let downloadStarted = false;
-
-// 60s timeout hint
-const connectTimeout = setTimeout(() => {
-    if (!downloadStarted) {
-        document.getElementById('connectingHint').innerHTML =
-            '⚠️ 仍在尋找傳送方...<br>請確認：① 傳送方頁面保持開啟 ② 雙方都有網路連線<br>' +
-            '<button onclick="location.reload()" style="margin-top:8px;padding:4px 14px;cursor:pointer;">重新連線</button>';
-    }
-}, 60000);
-
-client.add(MAGNET_URI, { announce: TRACKERS }, torrent => {
-    clearTimeout(connectTimeout);
-    document.getElementById('connectingHint').textContent = '已找到傳送方，準備下載...';
-
-    torrent.on('download', () => {
-        if (!downloadStarted) {
-            downloadStarted = true;
-            showPhase('downloading');
-            setStatus('下載中', 'downloading');
+        // ── Tracker health check (console diagnostics) ────────────
+        function checkTrackers() {
+            console.log('[P2P Share] Testing tracker connectivity...');
+            let reachable = 0;
+            TRACKERS.forEach(url => {
+                try {
+                    const ws = new WebSocket(url);
+                    const timer = setTimeout(() => {
+                        console.warn(`[Tracker] ✗ ${url} — timeout (5 s)`);
+                        ws.close();
+                    }, 5000);
+                    ws.onopen = () => {
+                        reachable++;
+                        console.log(`[Tracker] ✓ ${url} — reachable`);
+                        clearTimeout(timer);
+                        ws.close();
+                    };
+                    ws.onerror = () => {
+                        console.warn(`[Tracker] ✗ ${url} — unreachable`);
+                        clearTimeout(timer);
+                    };
+                } catch (e) {
+                    console.warn(`[Tracker] ✗ ${url} — error: ${e.message}`);
+                }
+            });
+            setTimeout(() => {
+                if (reachable === 0) {
+                    console.error('[P2P Share] ⚠ No trackers reachable! File transfer may not work.');
+                } else {
+                    console.log(`[P2P Share] ${reachable}/${TRACKERS.length} tracker(s) reachable.`);
+                }
+            }, 6000);
         }
-        updateStats(torrent);
-    });
+        checkTrackers();
 
-    torrent.on('done', () => {
-        setStatus('完成', 'done');
-        showPhase('done');
-        const container = document.getElementById('downloadButtons');
-        container.innerHTML = '';
-        torrent.files.forEach(file => {
-            file.getBlobURL((err, url) => {
-                if (err) return;
-                const item = document.createElement('div');
-                item.className = 'dl-file-item';
-                item.innerHTML = `
+        // ── Utilities ──────────────────────────────────────────────
+        function formatSize(bytes) {
+            if (!bytes || bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        function formatSpeed(bps) { return formatSize(bps) + '/s'; }
+        function formatETA(ms) {
+            if (!ms || ms === Infinity) return '';
+            const s = Math.round(ms / 1000);
+            if (s < 60) return `預估剩餘 ${s} 秒`;
+            if (s < 3600) return `預估剩餘 ${Math.round(s / 60)} 分鐘`;
+            return `預估剩餘 ${Math.round(s / 3600)} 小時`;
+        }
+
+        // ── Phase management ───────────────────────────────────────
+        function showPhase(phase) {
+            ['connecting', 'downloading', 'done', 'error'].forEach(p => {
+                const el = document.getElementById('phase-' + p);
+                if (el) el.style.display = (p === phase) ? '' : 'none';
+            });
+        }
+        function setStatus(text, cls) {
+            const badge = document.getElementById('statusBadge');
+            badge.className = 'status-badge ' + cls;
+            badge.innerHTML = `<span class="status-dot"></span>${text}`;
+        }
+
+        showPhase('connecting');
+
+        // ── WebTorrent download ────────────────────────────────────
+        const client = new WebTorrent();
+
+        client.on('error', err => {
+            console.error('WebTorrent error:', err);
+            document.getElementById('errorMsg').textContent = '錯誤：' + err.message;
+            showPhase('error');
+            setStatus('錯誤', '');
+        });
+
+        let downloadStarted = false;
+
+        // 60s timeout hint
+        const connectTimeout = setTimeout(() => {
+            if (!downloadStarted) {
+                document.getElementById('connectingHint').innerHTML =
+                    '⚠️ 仍在尋找傳送方...<br>請確認：① 傳送方頁面保持開啟 ② 雙方都有網路連線<br>' +
+                    '<button onclick="location.reload()" style="margin-top:8px;padding:4px 14px;cursor:pointer;">重新連線</button>';
+            }
+        }, 60000);
+
+        client.add(MAGNET_URI, { announce: TRACKERS }, torrent => {
+            clearTimeout(connectTimeout);
+            document.getElementById('connectingHint').textContent = '已找到傳送方，準備下載...';
+
+            torrent.on('download', () => {
+                if (!downloadStarted) {
+                    downloadStarted = true;
+                    showPhase('downloading');
+                    setStatus('下載中', 'downloading');
+                }
+                updateStats(torrent);
+            });
+
+            torrent.on('done', () => {
+                setStatus('完成', 'done');
+                showPhase('done');
+                const container = document.getElementById('downloadButtons');
+                container.innerHTML = '';
+                torrent.files.forEach(file => {
+                    file.getBlobURL((err, url) => {
+                        if (err) return;
+                        const item = document.createElement('div');
+                        item.className = 'dl-file-item';
+                        item.innerHTML = `
                     <i class="fas fa-file" style="color:var(--success); flex-shrink:0;"></i>
                     <div class="dl-file-name">${escapeHtml(file.name)}</div>
                     <span class="text-secondary small" style="flex-shrink:0;">${formatSize(file.length)}</span>
@@ -276,40 +319,41 @@ client.add(MAGNET_URI, { announce: TRACKERS }, torrent => {
                         <i class="fas fa-download"></i> 下載
                     </a>
                 `;
-                container.appendChild(item);
+                        container.appendChild(item);
+                    });
+                });
             });
+
+            torrent.on('wire', () => {
+                if (!downloadStarted)
+                    document.getElementById('connectingHint').textContent =
+                        `已連接 ${torrent.numPeers} 個裝置，開始傳輸...`;
+            });
+
+            setInterval(() => {
+                if (downloadStarted) updateStats(torrent);
+                else if (torrent.numPeers > 0)
+                    document.getElementById('connectingHint').textContent =
+                        `已連接 ${torrent.numPeers} 個裝置，等待傳輸...`;
+            }, 1000);
         });
-    });
 
-    torrent.on('wire', () => {
-        if (!downloadStarted)
-            document.getElementById('connectingHint').textContent =
-                `已連接 ${torrent.numPeers} 個裝置，開始傳輸...`;
-    });
+        function updateStats(torrent) {
+            const pct = (torrent.progress * 100).toFixed(1);
+            document.getElementById('progressPct').textContent = pct + '%';
+            document.getElementById('progressBar2').style.width = pct + '%';
+            document.getElementById('dlSpeed').textContent = formatSpeed(torrent.downloadSpeed);
+            document.getElementById('dlReceived').textContent = formatSize(torrent.downloaded);
+            document.getElementById('dlPeers').textContent = torrent.numPeers;
+            document.getElementById('etaText').textContent = formatETA(torrent.timeRemaining);
+        }
 
-    setInterval(() => {
-        if (downloadStarted) updateStats(torrent);
-        else if (torrent.numPeers > 0)
-            document.getElementById('connectingHint').textContent =
-                `已連接 ${torrent.numPeers} 個裝置，等待傳輸...`;
-    }, 1000);
-});
-
-function updateStats(torrent) {
-    const pct = (torrent.progress * 100).toFixed(1);
-    document.getElementById('progressPct').textContent  = pct + '%';
-    document.getElementById('progressBar2').style.width = pct + '%';
-    document.getElementById('dlSpeed').textContent      = formatSpeed(torrent.downloadSpeed);
-    document.getElementById('dlReceived').textContent   = formatSize(torrent.downloaded);
-    document.getElementById('dlPeers').textContent      = torrent.numPeers;
-    document.getElementById('etaText').textContent      = formatETA(torrent.timeRemaining);
-}
-
-function escapeHtml(text) {
-    const d = document.createElement('div');
-    d.appendChild(document.createTextNode(text));
-    return d.innerHTML;
-}
-</script>
+        function escapeHtml(text) {
+            const d = document.createElement('div');
+            d.appendChild(document.createTextNode(text));
+            return d.innerHTML;
+        }
+    </script>
 </body>
+
 </html>
