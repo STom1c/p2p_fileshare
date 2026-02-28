@@ -1,12 +1,22 @@
 from flask import Flask, request, jsonify, render_template, abort
+from flask_sock import Sock
 import sqlite3
 import string
 import random
 import os
+import json
+import threading
 
 app = Flask(__name__)
+sock = Sock(app)
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'urls.db')
+
+# ── In-memory WebTorrent tracker state ───────────────────────────────────────
+# Structure: { info_hash_str: { peer_id_str: { 'ws': ws, 'complete': bool } } }
+_swarms: dict = {}
+_swarm_lock = threading.Lock()
+# ─────────────────────────────────────────────────────────────────────────────
 
 
 def get_db():
@@ -97,6 +107,113 @@ def receive_page(code):
 @app.errorhandler(404)
 def not_found(e):
     return render_template('404.html'), 404
+
+
+# ── WebTorrent Tracker (WebSocket) ────────────────────────────────────────────
+@sock.route('/tracker')
+def ws_tracker(ws):
+    """
+    Lightweight WebTorrent tracker implementing the bittorrent-tracker
+    WebSocket signaling protocol.  Relays WebRTC SDP offers/answers so
+    browser peers can establish direct P2P connections.
+
+    info_hash / peer_id arrive as 20-char Latin-1 encoded binary strings
+    inside JSON.  Python decodes the UTF-8 WebSocket frame into str, so
+    ord(c) recovers the original byte value for each character.
+    """
+    my_ih: str | None = None
+    my_pid: str | None = None
+
+    try:
+        while True:
+            data = ws.receive(timeout=300)   # 5-min idle timeout
+            if data is None:
+                break
+
+            try:
+                msg = json.loads(data)
+            except Exception:
+                continue
+
+            if msg.get('action') != 'announce':
+                continue
+
+            ih  = msg.get('info_hash', '')
+            pid = msg.get('peer_id',   '')
+
+            # WebTorrent sends exactly 20-char binary strings for these fields.
+            if len(ih) != 20 or len(pid) != 20:
+                continue
+
+            my_ih  = ih
+            my_pid = pid
+
+            # ── Answer: relay back to the peer that sent the original offer ──
+            if msg.get('answer'):
+                to_pid = msg.get('to_peer_id', '')
+                if len(to_pid) == 20:
+                    with _swarm_lock:
+                        target = _swarms.get(ih, {}).get(to_pid)
+                    if target:
+                        try:
+                            target['ws'].send(json.dumps({
+                                'action':   'announce',
+                                'answer':   msg['answer'],
+                                'offer_id': msg.get('offer_id'),
+                                'peer_id':  pid,
+                                'info_hash': ih,
+                            }))
+                        except Exception:
+                            pass
+
+            # ── Announce: register peer, relay offers to existing peers ──────
+            else:
+                offers   = msg.get('offers', [])
+                left     = msg.get('left')
+                complete = (left == 0) if left is not None else False
+
+                with _swarm_lock:
+                    swarm  = _swarms.setdefault(ih, {})
+                    others = [(p, d) for p, d in swarm.items() if p != pid]
+                    swarm[pid] = {'ws': ws, 'complete': complete}
+                    n_complete   = sum(1 for d in swarm.values() if d['complete'])
+                    n_incomplete = len(swarm) - n_complete
+
+                # Forward each offer to one other peer (outside lock)
+                for i, offer in enumerate(offers[: len(others)]):
+                    other_pid, other = others[i]
+                    try:
+                        other['ws'].send(json.dumps({
+                            'action':   'announce',
+                            'offer':    offer.get('offer'),
+                            'offer_id': offer.get('offer_id'),
+                            'peer_id':  pid,
+                            'info_hash': ih,
+                        }))
+                    except Exception:
+                        pass
+
+                # Send announce response to this peer
+                try:
+                    ws.send(json.dumps({
+                        'action':    'announce',
+                        'info_hash': ih,
+                        'complete':   n_complete,
+                        'incomplete': n_incomplete,
+                        'interval':   120,
+                    }))
+                except Exception:
+                    pass
+
+    finally:
+        # Clean up on disconnect
+        if my_ih and my_pid:
+            with _swarm_lock:
+                swarm = _swarms.get(my_ih, {})
+                swarm.pop(my_pid, None)
+                if not swarm:
+                    _swarms.pop(my_ih, None)
+# ─────────────────────────────────────────────────────────────────────────────
 
 
 if __name__ == '__main__':
