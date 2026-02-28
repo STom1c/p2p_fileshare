@@ -4,14 +4,20 @@
 
 ---
 
-## [0.2.1] - 2026-02-28
-
-### Fixed
-- 修正 Tracker 連線問題：新增確認可用的 WSS tracker（`tracker.files.fm:7073`），原有 tracker 保留為備用
-- 移除已停用的 `tracker.btorrent.xyz` 優先順序（降為最末）
+## [0.3.0] - 2026-02-28
 
 ### Added
-- 新增 Tracker 連線診斷：頁面載入時自動檢測各 tracker 可達性，結果輸出至 Console
+- 自架 WebTorrent Tracker（`bittorrent-tracker`）部署於 Render，確保 WebRTC 信令中繼可靠運作
+- Tracker 連線診斷：頁面載入時自動檢測各 tracker 可達性，結果輸出至 Console
+- `tracker/` 子目錄：包含 Node.js tracker 伺服器及 package.json
+- `render.yaml` 新增第二個 Render web service（`p2p-share-tracker`）
+
+### Fixed
+- 修正 Tracker 連線問題：自架 tracker 作為首要信令伺服器，公共 tracker 保留為備用
+- 移除已停用的 `tracker.btorrent.xyz`
+
+### Changed
+- Tracker 清單優先順序調整：自架 > openwebtorrent.com > webtorrent.dev > files.fm
 
 ---
 

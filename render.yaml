@@ -1,4 +1,5 @@
 services:
+  # ── Flask web app (sender / receiver pages) ──
   - type: web
     name: p2p-share
     runtime: python
@@ -7,3 +8,14 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
+
+  # ── Self-hosted WebTorrent tracker (WebRTC signaling) ──
+  - type: web
+    name: p2p-share-tracker
+    runtime: node
+    rootDir: tracker
+    buildCommand: npm install
+    startCommand: node tracker-server.js
+    envVars:
+      - key: NODE_VERSION
+        value: 20.11.0

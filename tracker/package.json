@@ -1,0 +1,13 @@
+{
+    "name": "p2p-share-tracker",
+    "version": "1.0.0",
+    "type": "module",
+    "description": "Self-hosted WebTorrent tracker for P2P Share",
+    "main": "tracker-server.js",
+    "scripts": {
+        "start": "node tracker-server.js"
+    },
+    "dependencies": {
+        "bittorrent-tracker": "^11.0.0"
+    }
+}
