@@ -134,6 +134,7 @@ const FSIZE = {{ filesize }};
 
 let curFile=null, dlFiles={}, totalRcv=0, totalExp=FSIZE||0;
 let lastBytes=0, lastTime=Date.now(), spdTimer=null, isDone=false;
+let keepaliveTimer=null;
 
 function fmt(b) {
     if (!b) return '0 B';
@@ -163,6 +164,11 @@ ws.onopen = () => {
     ws.send(JSON.stringify({role:'receiver'}));
     document.getElementById('hint').textContent = '已連線至伺服器，等待傳送方...';
     badge('已連線','downloading');
+    // Keepalive: ping every 20s so the reverse proxy doesn't close an idle connection
+    keepaliveTimer = setInterval(() => {
+        if (ws.readyState === WebSocket.OPEN && !isDone)
+            ws.send(JSON.stringify({type:'ping'}));
+    }, 20000);
 };
 
 ws.onmessage = (e) => {
@@ -201,10 +207,12 @@ ws.onmessage = (e) => {
 };
 
 ws.onerror = () => {
+    clearInterval(keepaliveTimer);
     if (!isDone) { document.getElementById('errMsg').textContent='連線錯誤'; phase('error'); badge('錯誤',''); }
 };
 ws.onclose = () => {
     clearInterval(spdTimer);
+    clearInterval(keepaliveTimer);
     if (!isDone) { document.getElementById('errMsg').textContent='連線已中斷，請重試。'; phase('error'); badge('錯誤',''); }
 };
 

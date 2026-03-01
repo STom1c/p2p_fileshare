@@ -164,9 +164,17 @@ def ws_relay(ws, code):
             entry['receiver_ws'] = ws
             entry['receiver_ready'].set()   # unblock sender thread
 
-            # Hold the WebSocket open; the sender thread writes into it directly.
-            # We just wait until the transfer is done (or times out / errors).
-            entry['done'].wait(timeout=3600)
+            # Keep reading from the receiver socket so the proxy doesn't
+            # consider the connection idle and close it.
+            # The browser sends periodic keepalive pings; we just discard them.
+            while not entry['done'].is_set():
+                try:
+                    msg = ws.receive(timeout=30)
+                    if msg is None:
+                        break
+                    # ignore keepalive pings from browser
+                except Exception:
+                    break
 
     finally:
         with _relay_lock:
