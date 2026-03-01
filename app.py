@@ -1,17 +1,15 @@
 from flask import Flask, request, jsonify, render_template, abort
-import sqlite3
-import string
-import random
-import os
-import threading
+from flask_sock import Sock
+import sqlite3, string, random, os, threading, json
 
-app = Flask(__name__)
+app  = Flask(__name__)
+sock = Sock(app)
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'urls.db')
 
-# In-memory signaling store: { code: { 'offer': dict|None, 'answer': dict|None } }
-_signals: dict = {}
-_signals_lock = threading.Lock()
+# Relay sessions: { code: { sender_ws, receiver_ws, receiver_ready, done } }
+_relay: dict = {}
+_relay_lock  = threading.Lock()
 
 
 def get_db():
@@ -58,21 +56,25 @@ def shorten():
     conn = get_db()
     try:
         code = generate_code()
-        while conn.execute('SELECT 1 FROM short_urls WHERE code = ?', (code,)).fetchone():
+        while conn.execute('SELECT 1 FROM short_urls WHERE code=?', (code,)).fetchone():
             code = generate_code()
         conn.execute(
-            'INSERT INTO short_urls (code, filename, filesize, file_count) VALUES (?, ?, ?, ?)',
+            'INSERT INTO short_urls (code,filename,filesize,file_count) VALUES (?,?,?,?)',
             (code, filename, filesize, file_count)
         )
         conn.commit()
     finally:
         conn.close()
 
-    with _signals_lock:
-        _signals[code] = {'offer': None, 'answer': None}
+    with _relay_lock:
+        _relay[code] = {
+            'sender_ws':      None,
+            'receiver_ws':    None,
+            'receiver_ready': threading.Event(),
+            'done':           threading.Event(),
+        }
 
-    base_url  = request.host_url.rstrip('/')
-    short_url = f"{base_url}/s/{code}"
+    short_url = request.host_url.rstrip('/') + f'/s/{code}'
     return jsonify({'short_url': short_url, 'code': code})
 
 
@@ -81,8 +83,7 @@ def receive_page(code):
     conn = get_db()
     try:
         row = conn.execute(
-            'SELECT filename, filesize, file_count FROM short_urls WHERE code = ?',
-            (code,)
+            'SELECT filename,filesize,file_count FROM short_urls WHERE code=?', (code,)
         ).fetchone()
     finally:
         conn.close()
@@ -90,43 +91,86 @@ def receive_page(code):
     if not row:
         abort(404)
 
-    return render_template(
-        'receive.html',
-        filename=row['filename'],
-        filesize=row['filesize'],
-        file_count=row['file_count'],
-        code=code
-    )
+    return render_template('receive.html',
+        filename=row['filename'], filesize=row['filesize'],
+        file_count=row['file_count'], code=code)
 
 
-@app.route('/api/signal/<code>/offer', methods=['GET', 'POST'])
-def signal_offer(code):
-    if request.method == 'POST':
-        data = request.get_json()
-        with _signals_lock:
-            if code not in _signals:
-                _signals[code] = {'offer': None, 'answer': None}
-            _signals[code]['offer'] = data.get('sdp')
-        return jsonify({'ok': True})
-    # GET
-    with _signals_lock:
-        sig = _signals.get(code)
-    return jsonify({'sdp': sig['offer'] if sig else None})
+# ── WebSocket relay ───────────────────────────────────────
+@sock.route('/ws/<code>')
+def ws_relay(ws, code):
+    """
+    Both sender and receiver connect here.
+    First message must be JSON: {"role": "sender"} or {"role": "receiver"}.
 
+    Sender thread:  waits for receiver, then relays all messages to receiver_ws.
+    Receiver thread: registers itself, then holds the socket open while the
+                     sender thread writes into it from the other thread.
+    """
+    try:
+        raw = ws.receive(timeout=60)
+    except Exception:
+        return
+    if not raw:
+        return
 
-@app.route('/api/signal/<code>/answer', methods=['GET', 'POST'])
-def signal_answer(code):
-    if request.method == 'POST':
-        data = request.get_json()
-        with _signals_lock:
-            if code not in _signals:
-                _signals[code] = {'offer': None, 'answer': None}
-            _signals[code]['answer'] = data.get('sdp')
-        return jsonify({'ok': True})
-    # GET
-    with _signals_lock:
-        sig = _signals.get(code)
-    return jsonify({'sdp': sig['answer'] if sig else None})
+    try:
+        role = json.loads(raw).get('role')
+    except Exception:
+        return
+
+    if role not in ('sender', 'receiver'):
+        return
+
+    # Lazily create relay entry (receiver may arrive before sender)
+    with _relay_lock:
+        if code not in _relay:
+            _relay[code] = {
+                'sender_ws':      None,
+                'receiver_ws':    None,
+                'receiver_ready': threading.Event(),
+                'done':           threading.Event(),
+            }
+        entry = _relay[code]
+
+    try:
+        if role == 'sender':
+            entry['sender_ws'] = ws
+
+            # Wait up to 10 min for receiver to open the link
+            if not entry['receiver_ready'].wait(timeout=600):
+                ws.send(json.dumps({'type': 'error', 'msg': '等待接收方逾時，請重新整理頁面重試。'}))
+                return
+
+            # Tell sender to start streaming
+            ws.send(json.dumps({'type': 'go'}))
+
+            # Relay every frame (text or binary) to the receiver
+            while True:
+                try:
+                    frame = ws.receive(timeout=600)
+                except Exception:
+                    break
+                if frame is None:
+                    break
+                try:
+                    entry['receiver_ws'].send(frame)
+                except Exception:
+                    break
+
+            entry['done'].set()  # unblock receiver thread so it can exit cleanly
+
+        elif role == 'receiver':
+            entry['receiver_ws'] = ws
+            entry['receiver_ready'].set()   # unblock sender thread
+
+            # Hold the WebSocket open; the sender thread writes into it directly.
+            # We just wait until the transfer is done (or times out / errors).
+            entry['done'].wait(timeout=3600)
+
+    finally:
+        with _relay_lock:
+            _relay.pop(code, None)
 
 
 @app.errorhandler(404)

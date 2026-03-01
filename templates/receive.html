@@ -10,128 +10,104 @@
 </head>
 <body>
 
-<!-- ── Navbar ── -->
 <nav class="navbar">
     <div class="container">
         <a href="/" class="navbar-brand">
             <i class="fas fa-share-nodes"></i> P2P Share
-            <span style="font-size:0.65rem; font-weight:400; opacity:0.6; margin-left:4px;">by Stanley Tseng / 史單力</span>
+            <span style="font-size:0.65rem;font-weight:400;opacity:0.6;margin-left:4px;">by Stanley Tseng / 史單力</span>
         </a>
-        <a href="/" class="btn-secondary-custom" style="padding:6px 14px; font-size:0.8rem;">
+        <a href="/" class="btn-secondary-custom" style="padding:6px 14px;font-size:.8rem">
             <i class="fas fa-upload me-1"></i>分享我的檔案
         </a>
     </div>
 </nav>
 
-<!-- ── Main ── -->
 <main class="container py-5">
-    <div style="max-width:600px; margin:0 auto;">
+    <div style="max-width:600px;margin:0 auto">
 
-        <!-- Title -->
         <div class="text-center mb-4">
-            <h2 class="fw-bold" style="margin-bottom:0.5rem;">接收檔案</h2>
-            <p class="text-secondary small">透過 WebRTC P2P 直接接收，不需上傳至伺服器</p>
+            <h2 class="fw-bold" style="margin-bottom:.5rem">接收檔案</h2>
+            <p class="text-secondary small">透過加密串流直接接收，不需上傳至伺服器</p>
         </div>
 
-        <!-- ── Receive Card ── -->
         <div class="card-glass">
 
-            <!-- File info header -->
-            <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem; padding-bottom:1.5rem; border-bottom:1px solid var(--card-border);">
-                <div style="width:54px;height:54px;background:linear-gradient(135deg,var(--primary),#8b5cf6);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0;">
-                    {% if file_count > 1 %}
-                    <i class="fas fa-folder-open" style="color:white;"></i>
-                    {% else %}
-                    <i class="fas fa-file" style="color:white;"></i>
-                    {% endif %}
+            <!-- Header -->
+            <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--card-border)">
+                <div style="width:54px;height:54px;background:linear-gradient(135deg,var(--primary),#8b5cf6);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0">
+                    {% if file_count > 1 %}<i class="fas fa-folder-open" style="color:white"></i>
+                    {% else %}<i class="fas fa-file" style="color:white"></i>{% endif %}
                 </div>
-                <div style="flex:1; min-width:0;">
-                    <div style="font-weight:600; font-size:1rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                <div style="flex:1;min-width:0">
+                    <div style="font-weight:600;font-size:1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
                         {{ filename or '未知檔案' }}
                     </div>
-                    <div class="text-secondary small" style="margin-top:2px;">
+                    <div class="text-secondary small" style="margin-top:2px">
                         {% if filesize %}{{ filesize | filesizeformat }}{% else %}大小未知{% endif %}
                         {% if file_count > 1 %} · {{ file_count }} 個檔案{% endif %}
                     </div>
                 </div>
                 <span id="statusBadge" class="status-badge connecting">
-                    <span class="status-dot"></span>
-                    連線中
+                    <span class="status-dot"></span>連線中
                 </span>
             </div>
 
-            <!-- PHASE 1: Connecting -->
+            <!-- connecting -->
             <div id="phase-connecting">
                 <div class="alert-info-custom mb-4">
                     <i class="fas fa-circle-notch fa-spin me-2"></i>
-                    正在尋找傳送方裝置，請確保傳送方頁面保持開啟...
-                </div>
-                <div class="progress-wrap">
-                    <div class="progress-bar-custom" style="width:0%" id="progressBar"></div>
+                    正在連線至傳送方，請確保傳送方頁面保持開啟...
                 </div>
                 <div class="text-center mt-3">
-                    <span class="text-secondary small" id="connectingHint">等待連線...</span>
+                    <span class="text-secondary small" id="hint">等待連線...</span>
                 </div>
             </div>
 
-            <!-- PHASE 2: Downloading -->
+            <!-- downloading -->
             <div id="phase-downloading" style="display:none">
-                <div style="margin-bottom:0.5rem; display:flex; justify-content:space-between; align-items:center;">
+                <div style="margin-bottom:.5rem;display:flex;justify-content:space-between;align-items:center">
                     <span class="text-secondary small">下載進度</span>
-                    <span id="progressPct" style="font-weight:700; font-size:1rem;">0%</span>
+                    <span id="pct" style="font-weight:700;font-size:1rem">0%</span>
                 </div>
                 <div class="progress-wrap mb-3">
-                    <div class="progress-bar-custom" id="progressBar2" style="width:0%;"></div>
+                    <div class="progress-bar-custom" id="bar" style="width:0%"></div>
                 </div>
-
-                <div class="stats-grid mb-4" style="grid-template-columns:repeat(3,1fr);">
+                <div class="stats-grid mb-4" style="grid-template-columns:repeat(3,1fr)">
                     <div class="stat-item">
-                        <i class="fas fa-download" style="color:var(--accent);"></i>
-                        <div>
-                            <div class="stat-value" id="dlSpeed">0 B/s</div>
-                            <div class="stat-label">下載速度</div>
-                        </div>
+                        <i class="fas fa-download" style="color:var(--accent)"></i>
+                        <div><div class="stat-value" id="dlSpd">0 B/s</div><div class="stat-label">下載速度</div></div>
                     </div>
                     <div class="stat-item">
-                        <i class="fas fa-database" style="color:var(--primary);"></i>
-                        <div>
-                            <div class="stat-value" id="dlReceived">0 B</div>
-                            <div class="stat-label">已接收</div>
-                        </div>
+                        <i class="fas fa-database" style="color:var(--primary)"></i>
+                        <div><div class="stat-value" id="dlRcv">0 B</div><div class="stat-label">已接收</div></div>
                     </div>
                     <div class="stat-item">
-                        <i class="fas fa-users" style="color:var(--success);"></i>
-                        <div>
-                            <div class="stat-value" id="dlPeers">1</div>
-                            <div class="stat-label">連線裝置</div>
-                        </div>
+                        <i class="fas fa-users" style="color:var(--success)"></i>
+                        <div><div class="stat-value" id="dlPeers">1</div><div class="stat-label">連線裝置</div></div>
                     </div>
                 </div>
-                <div class="text-center text-secondary small" id="etaText"></div>
             </div>
 
-            <!-- PHASE 3: Done -->
+            <!-- done -->
             <div id="phase-done" style="display:none">
-                <div class="alert-success-custom mb-4" style="text-align:center; padding:1.2rem;">
-                    <i class="fas fa-check-circle" style="font-size:2rem; display:block; margin-bottom:0.5rem;"></i>
+                <div class="alert-success-custom mb-4" style="text-align:center;padding:1.2rem">
+                    <i class="fas fa-check-circle" style="font-size:2rem;display:block;margin-bottom:.5rem"></i>
                     <strong>下載完成！</strong>
                 </div>
                 <div id="downloadButtons"></div>
                 <div class="text-center mt-4">
-                    <a href="/" class="btn-secondary-custom" style="text-decoration:none;">
+                    <a href="/" class="btn-secondary-custom" style="text-decoration:none">
                         <i class="fas fa-share-alt me-1"></i>分享我的檔案
                     </a>
                 </div>
             </div>
 
-            <!-- PHASE: Error -->
+            <!-- error -->
             <div id="phase-error" style="display:none">
-                <div style="background:rgba(255,82,82,0.1);border:1px solid rgba(255,82,82,0.3);border-radius:10px;padding:1rem;color:var(--danger);text-align:center;">
-                    <i class="fas fa-exclamation-circle" style="font-size:2rem; display:block; margin-bottom:0.5rem;"></i>
-                    <strong id="errorMsg">連線失敗</strong>
-                    <p class="small" style="margin:0.5rem 0 0; color:rgba(255,255,255,0.5);">
-                        請確認傳送方頁面仍然開啟，然後重新整理此頁面。
-                    </p>
+                <div style="background:rgba(255,82,82,.1);border:1px solid rgba(255,82,82,.3);border-radius:10px;padding:1rem;color:var(--danger);text-align:center">
+                    <i class="fas fa-exclamation-circle" style="font-size:2rem;display:block;margin-bottom:.5rem"></i>
+                    <strong id="errMsg">連線失敗</strong>
+                    <p class="small" style="margin:.5rem 0 0;color:rgba(255,255,255,.5)">請確認傳送方頁面仍然開啟，然後重新整理此頁面。</p>
                 </div>
                 <div class="text-center mt-3">
                     <button onclick="location.reload()" class="btn-secondary-custom">
@@ -140,217 +116,125 @@
                 </div>
             </div>
 
-        </div><!-- /card-glass -->
+        </div>
 
         <div class="alert-info-custom mt-4 small">
             <i class="fas fa-lightbulb me-2"></i>
-            想分享您的檔案？<a href="/" style="color:var(--accent); font-weight:600;">點此開始分享</a>，完全免費，無需帳號。
+            想分享您的檔案？<a href="/" style="color:var(--accent);font-weight:600">點此開始分享</a>，完全免費，無需帳號。
         </div>
-
     </div>
 </main>
 
-<footer>
-    P2P Share &nbsp;·&nbsp;
-    由 <a href="https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API" target="_blank">WebRTC</a> 技術驅動 &nbsp;·&nbsp;
-    Stanley Tseng / 史單力 個人版本
-</footer>
+<footer>P2P Share &nbsp;·&nbsp; Stanley Tseng / 史單力 個人版本</footer>
 
-<!-- ── Scripts ── -->
 <script>
-// ============================================================
-// P2P Share — Receiver Logic (WebRTC DataChannel)
-// ============================================================
+// ── Receiver ──────────────────────────────────────────────
+const CODE  = {{ code | tojson }};
+const FSIZE = {{ filesize }};
 
-const CODE       = {{ code | tojson }};
-const FILENAME   = {{ filename | tojson }};
-const FILESIZE   = {{ filesize }};
-const FILE_COUNT = {{ file_count }};
+let curFile=null, dlFiles={}, totalRcv=0, totalExp=FSIZE||0;
+let lastBytes=0, lastTime=Date.now(), spdTimer=null, isDone=false;
 
-const STUN_SERVERS = [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-];
-
-let pc               = null;
-let currentFile      = null;   // { name, size, chunks[], received }
-let downloadedFiles  = {};
-let totalReceived    = 0;
-let totalExpected    = FILESIZE || 0;
-let lastSpeedBytes   = 0;
-let lastSpeedTime    = Date.now();
-let speedInterval    = null;
-let connectionMade   = false;
-
-// ── Utilities ──────────────────────────────────────────────
-function formatSize(bytes) {
-    if (!bytes || bytes === 0) return '0 B';
-    const k = 1024, sizes = ['B','KB','MB','GB','TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+function fmt(b) {
+    if (!b) return '0 B';
+    const k=1024, u=['B','KB','MB','GB','TB'], i=Math.floor(Math.log(b)/Math.log(k));
+    return parseFloat((b/k**i).toFixed(2))+' '+u[i];
 }
-function escapeHtml(text) {
-    const d = document.createElement('div');
-    d.appendChild(document.createTextNode(text));
-    return d.innerHTML;
+function esc(t) { const d=document.createElement('div'); d.appendChild(document.createTextNode(t)); return d.innerHTML; }
+
+function phase(p) {
+    ['connecting','downloading','done','error'].forEach(x =>
+        document.getElementById('phase-'+x).style.display = x===p?'':'none');
+}
+function badge(text,cls) {
+    const b=document.getElementById('statusBadge');
+    b.className='status-badge '+cls;
+    b.innerHTML=`<span class="status-dot"></span>${text}`;
 }
 
-// ── Phase management ───────────────────────────────────────
-function showPhase(phase) {
-    ['connecting','downloading','done','error'].forEach(p => {
-        const el = document.getElementById('phase-' + p);
-        if (el) el.style.display = (p === phase) ? '' : 'none';
-    });
-}
-function setStatus(text, cls) {
-    const badge = document.getElementById('statusBadge');
-    badge.className = 'status-badge ' + cls;
-    badge.innerHTML = `<span class="status-dot"></span>${text}`;
-}
+phase('connecting');
 
-showPhase('connecting');
+// Connect WebSocket as receiver
+const proto = location.protocol==='https:' ? 'wss' : 'ws';
+const ws = new WebSocket(`${proto}://${location.host}/ws/${CODE}`);
+ws.binaryType = 'arraybuffer';
 
-// ── 60s timeout hint ───────────────────────────────────────
-setTimeout(() => {
-    if (!connectionMade)
-        document.getElementById('connectingHint').innerHTML =
-            '⚠️ 仍在等待傳送方...<br>請確認：① 傳送方頁面保持開啟 ② 雙方都有網路連線<br>' +
-            '<button onclick="location.reload()" style="margin-top:8px;padding:4px 14px;cursor:pointer;">重新連線</button>';
-}, 60000);
+ws.onopen = () => {
+    ws.send(JSON.stringify({role:'receiver'}));
+    document.getElementById('hint').textContent = '已連線至伺服器，等待傳送方...';
+    badge('已連線','downloading');
+};
 
-// ── Poll for SDP offer ─────────────────────────────────────
-async function pollForOffer() {
-    try {
-        const r    = await fetch(`/api/signal/${CODE}/offer`);
-        const data = await r.json();
-        if (data.sdp) {
-            connectionMade = true;
-            document.getElementById('connectingHint').textContent = '已找到傳送方，正在建立連線...';
-            await connectWithOffer(data.sdp);
-        } else {
-            setTimeout(pollForOffer, 2000);
-        }
-    } catch(e) {
-        setTimeout(pollForOffer, 3000);
-    }
-}
-pollForOffer();
-
-// ── Build answer and post it ───────────────────────────────
-async function connectWithOffer(offerSdp) {
-    pc = new RTCPeerConnection({ iceServers: STUN_SERVERS });
-
-    pc.ondatachannel = (e) => {
-        const dc = e.channel;
-        dc.binaryType = 'arraybuffer';
-        dc.onopen    = () => {
-            setStatus('已連線', 'downloading');
-            document.getElementById('connectingHint').textContent = '連線成功，等待接收檔案...';
-            speedInterval = setInterval(updateSpeed, 1000);
-        };
-        dc.onmessage = (e) => handleMessage(e.data);
-        dc.onclose   = () => { if (speedInterval) clearInterval(speedInterval); };
-    };
-
-    pc.oniceconnectionstatechange = () => {
-        if (pc.iceConnectionState === 'failed') {
-            document.getElementById('errorMsg').textContent = '連線失敗，請重試。';
-            showPhase('error');
-            setStatus('錯誤', '');
-        }
-    };
-
-    // Set up listener BEFORE setLocalDescription
-    const iceReady = new Promise(resolve => {
-        if (pc.iceGatheringState === 'complete') { resolve(); return; }
-        const h = () => {
-            if (pc.iceGatheringState === 'complete') {
-                pc.removeEventListener('icegatheringstatechange', h);
-                resolve();
-            }
-        };
-        pc.addEventListener('icegatheringstatechange', h);
-        setTimeout(resolve, 5000);
-    });
-
-    await pc.setRemoteDescription(new RTCSessionDescription(offerSdp));
-    const answer = await pc.createAnswer();
-    await pc.setLocalDescription(answer);
-    await iceReady;
-
-    await fetch(`/api/signal/${CODE}/answer`, {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ sdp: pc.localDescription })
-    });
-}
-
-// ── Handle incoming DataChannel messages ──────────────────
-function handleMessage(data) {
-    if (typeof data === 'string') {
-        const msg = JSON.parse(data);
+ws.onmessage = (e) => {
+    if (typeof e.data === 'string') {
+        const msg = JSON.parse(e.data);
 
         if (msg.type === 'meta') {
-            totalExpected = msg.files.reduce((s, f) => s + f.size, 0);
-            showPhase('downloading');
-            setStatus('下載中', 'downloading');
+            totalExp = msg.files.reduce((s,f)=>s+f.size,0);
+            phase('downloading');
+            badge('下載中','downloading');
+            spdTimer = setInterval(updateSpd, 1000);
 
         } else if (msg.type === 'file-start') {
-            currentFile = { name: msg.name, size: msg.size, chunks: [], received: 0 };
-            downloadedFiles[msg.name] = currentFile;
+            curFile = {name:msg.name, size:msg.size, chunks:[], rcv:0};
+            dlFiles[msg.name] = curFile;
 
         } else if (msg.type === 'file-end') {
-            const f = downloadedFiles[msg.name];
-            if (f) {
-                const blob = new Blob(f.chunks);
-                addDownloadButton(msg.name, f.size, URL.createObjectURL(blob));
-            }
+            const f=dlFiles[msg.name];
+            if (f) addBtn(msg.name, f.size, URL.createObjectURL(new Blob(f.chunks)));
 
         } else if (msg.type === 'done') {
-            setStatus('完成', 'done');
-            showPhase('done');
-            if (speedInterval) clearInterval(speedInterval);
+            isDone=true;
+            badge('完成','done');
+            phase('done');
+            clearInterval(spdTimer);
         }
 
     } else {
         // Binary chunk
-        if (!currentFile) return;
-        currentFile.chunks.push(data);
-        currentFile.received += data.byteLength;
-        totalReceived        += data.byteLength;
-        updateProgress();
+        if (!curFile) return;
+        curFile.chunks.push(e.data);
+        curFile.rcv  += e.data.byteLength;
+        totalRcv     += e.data.byteLength;
+        updProg();
     }
-}
+};
 
-function updateProgress() {
-    if (totalExpected <= 0) return;
-    const pct = Math.min(100, (totalReceived / totalExpected * 100)).toFixed(1);
-    document.getElementById('progressPct').textContent   = pct + '%';
-    document.getElementById('progressBar2').style.width  = pct + '%';
-    document.getElementById('dlReceived').textContent    = formatSize(totalReceived);
-}
+ws.onerror = () => {
+    if (!isDone) { document.getElementById('errMsg').textContent='連線錯誤'; phase('error'); badge('錯誤',''); }
+};
+ws.onclose = () => {
+    clearInterval(spdTimer);
+    if (!isDone) { document.getElementById('errMsg').textContent='連線已中斷，請重試。'; phase('error'); badge('錯誤',''); }
+};
 
-function updateSpeed() {
-    const now  = Date.now();
-    const secs = (now - lastSpeedTime) / 1000;
-    const spd  = secs > 0 ? (totalReceived - lastSpeedBytes) / secs : 0;
-    document.getElementById('dlSpeed').textContent = formatSize(spd) + '/s';
-    lastSpeedBytes = totalReceived;
-    lastSpeedTime  = now;
-}
+// 90s hint if sender hasn't connected
+setTimeout(() => {
+    if (!isDone && document.getElementById('phase-connecting').style.display !== 'none')
+        document.getElementById('hint').innerHTML =
+            '⚠️ 仍在等待傳送方...<br>請確認傳送方頁面保持開啟。<br>' +
+            '<button onclick="location.reload()" style="margin-top:8px;padding:4px 14px;cursor:pointer">重新整理</button>';
+}, 90000);
 
-function addDownloadButton(name, size, url) {
-    const container = document.getElementById('downloadButtons');
-    const item = document.createElement('div');
-    item.className = 'dl-file-item';
-    item.innerHTML = `
-        <i class="fas fa-file" style="color:var(--success); flex-shrink:0;"></i>
-        <div class="dl-file-name">${escapeHtml(name)}</div>
-        <span class="text-secondary small" style="flex-shrink:0;">${formatSize(size)}</span>
-        <a href="${url}" download="${escapeHtml(name)}" class="btn-download">
-            <i class="fas fa-download"></i> 下載
-        </a>`;
-    container.appendChild(item);
+function updProg() {
+    if (!totalExp) return;
+    const p=Math.min(100,totalRcv/totalExp*100).toFixed(1);
+    document.getElementById('pct').textContent   = p+'%';
+    document.getElementById('bar').style.width   = p+'%';
+    document.getElementById('dlRcv').textContent = fmt(totalRcv);
+}
+function updateSpd() {
+    const now=Date.now(), s=(now-lastTime)/1000;
+    document.getElementById('dlSpd').textContent = fmt(s>0?(totalRcv-lastBytes)/s:0)+'/s';
+    lastBytes=totalRcv; lastTime=now;
+}
+function addBtn(name, size, url) {
+    const el=document.createElement('div'); el.className='dl-file-item';
+    el.innerHTML=`<i class="fas fa-file" style="color:var(--success);flex-shrink:0"></i>
+        <div class="dl-file-name">${esc(name)}</div>
+        <span class="text-secondary small" style="flex-shrink:0">${fmt(size)}</span>
+        <a href="${url}" download="${esc(name)}" class="btn-download"><i class="fas fa-download"></i> 下載</a>`;
+    document.getElementById('downloadButtons').appendChild(el);
 }
 </script>
 </body>
