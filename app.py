@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, render_template, abort
 from flask_sock import Sock
-import sqlite3, string, random, os, threading, json
+import sqlite3, string, random, os, threading, json, urllib.request
 
 app  = Flask(__name__)
 sock = Sock(app)
@@ -74,8 +74,25 @@ def shorten():
             'done':           threading.Event(),
         }
 
-    short_url = request.host_url.rstrip('/') + f'/s/{code}'
-    return jsonify({'short_url': short_url, 'code': code})
+    original_url = request.host_url.rstrip('/') + f'/s/{code}'
+
+    # Try to shorten with reurl.cc; fall back to original on any error
+    short_url = original_url
+    try:
+        req = urllib.request.Request(
+            'https://api.reurl.cc/shorten',
+            data=json.dumps({'url': original_url}).encode(),
+            headers={
+                'Content-Type': 'application/json',
+                'reurl-api-key': '4070ff49d794e43411523b663c974755ecd7b031949f04df8a38b58d65165567c4f5d6',
+            },
+        )
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            short_url = json.loads(resp.read()).get('short_url', original_url)
+    except Exception:
+        pass  # fall back to original URL silently
+
+    return jsonify({'short_url': short_url, 'original_url': original_url, 'code': code})
 
 
 @app.route('/s/<code>')
